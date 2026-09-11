@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>116 學測數學 - 多項式函數特訓</title>
-    
-    <!-- Tailwind CSS -->
+
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
@@ -13,44 +13,23 @@
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
             background-color: #f8fafc;
         }
-        /* Custom Scrollbar for Chat */
         .chat-scroll::-webkit-scrollbar { width: 6px; }
         .chat-scroll::-webkit-scrollbar-track { background: transparent; }
         .chat-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         .chat-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 
-    <!-- React & ReactDOM -->
+    <!-- React, ReactDOM & Babel CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- MathJax for rendering math formulas -->
+
+    <!-- MathJax 數學公式渲染器 -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
     <div id="root"></div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-gsat-math-app';
-        let firebaseConfig = {};
-        try {
-            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        } catch (e) { console.error("Firebase config error", e); }
-
-        // Make Firebase accessible globally for React component
-        window.firebaseApp = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
-        window.db = window.firebaseApp ? getFirestore(window.firebaseApp) : null;
-        window.auth = window.firebaseApp ? getAuth(window.firebaseApp) : null;
-        window.appId = appId;
-        
-        window.firebaseModules = { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, signInAnonymously, onAuthStateChanged };
-    </script>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
@@ -84,8 +63,8 @@
         const SYSTEM_PROMPT = `你是一位專精於台灣「108課綱學測數學（數A/數B）」的學測家教。你的目標是透過引導式（蘇格拉底式）教學，培養學生的數學直覺、邏輯拆解力與解題策略，而非直接灌輸答案。
 
 1. 獨立驗證與診斷先行：在回應學生之前，先在背景獨立進行步驟化計算與推導。若學生提供解答或算式，不要第一句話直接回答「正確」或「錯誤」。先比對學生的推導過程，明確指出其觀念盲點、代數計算錯誤或幾何直覺偏差。
-2. 階段式引導教學：不要直接給出完整解答。要將題目拆解為 2-3 個核心步驟（Step 1：關鍵概念識別，Step 2：核心公式，Step 3：代數推導）。每輪回應只給出當前步驟的思考提示，並提出 1 個具體的引導問題讓學生回答。
-3. 結構化輸出格式：每次分析題目時，固定提供以下模組（放在回應開頭，使用 Markdown 格式）：
+2. 階段式引導教學：不要直接給出完整解答。要將題目拆解為 2-3 個核心步驟。每輪回應只給出當前步驟的思考提示，並提出 1 個具體的引導問題讓學生回答。
+3. 結構化輸出格式：每次分析題目時，固定提供以下模組：
 ----------------------------------------
 **單元重點**：[例如：多項式函數]
 **核心考點**：[例如：餘式定理與多項式假設法]
@@ -93,7 +72,7 @@
 ----------------------------------------
 4. 語氣與溝通風格：態度扎實、切中要害。說明概念時儘量圖像化、具體化。輸出數學式請使用 LaTeX 格式（例如 \\( x^2 + 1 \\) 或 $$ x^2 + 1 $$）。`;
 
-        // 用於觸發 MathJax 渲染的 Hook
+        // 觸發 MathJax 渲染
         const useMathJax = (content) => {
             useEffect(() => {
                 if (window.MathJax && window.MathJax.typesetPromise) {
@@ -102,7 +81,7 @@
             }, [content]);
         };
 
-        const MockTest = ({ onFinishTest, navigateToTutor }) => {
+        const MockTest = ({ navigateToTutor }) => {
             const [answers, setAnswers] = useState({});
             const [submitted, setSubmitted] = useState(false);
             useMathJax(answers);
@@ -116,11 +95,9 @@
                 if (submitted) return;
                 setAnswers(prev => {
                     const curr = prev[qId] || [];
-                    if (curr.includes(optIdx)) {
-                        return { ...prev, [qId]: curr.filter(i => i !== optIdx) };
-                    } else {
-                        return { ...prev, [qId]: [...curr, optIdx] };
-                    }
+                    return curr.includes(optIdx)
+                        ? { ...prev, [qId]: curr.filter(i => i !== optIdx) }
+                        : { ...prev, [qId]: [...curr, optIdx] };
                 });
             };
 
@@ -139,24 +116,15 @@
                 return correct;
             };
 
-            const submitTest = () => {
-                if (Object.keys(answers).length < QUIZ_DATA.length) {
-                    alert('請完成所有題目後再繳卷！(實際應用應使用 Modal)');
-                    return;
-                }
-                setSubmitted(true);
-            };
-
             return (
                 <div className="max-w-3xl mx-auto p-4 md:p-6 pb-20">
                     <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center">
-                        <svg className="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        第三冊 多項式函數 實戰模擬
+                        🎯 第三冊 多項式函數 實戰模擬
                     </h2>
                     
                     {QUIZ_DATA.map((q, idx) => (
                         <div key={q.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                            <div className="flex justify-between items-start mb-4">
+                            <div className="mb-4">
                                 <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 text-sm font-semibold rounded-full">
                                     第 {idx + 1} 題 ({q.type})
                                 </span>
@@ -189,9 +157,7 @@
                                             className={btnClass}
                                             disabled={submitted}
                                         >
-                                            <span className="mr-3 font-semibold text-slate-500">
-                                                ({String.fromCharCode(65 + optIdx)})
-                                            </span>
+                                            <span className="mr-3 font-semibold text-slate-500">({String.fromCharCode(65 + optIdx)})</span>
                                             <span dangerouslySetInnerHTML={{__html: opt}} />
                                         </button>
                                     );
@@ -200,7 +166,7 @@
 
                             {submitted && (
                                 <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                    <p className="text-yellow-800 text-sm font-medium mb-2">💡 觀念提示</p>
+                                    <p className="text-yellow-800 text-sm font-medium mb-1">💡 觀念提示</p>
                                     <p className="text-yellow-900 text-sm" dangerouslySetInnerHTML={{__html: q.hint}} />
                                     <button 
                                         onClick={() => navigateToTutor(`我剛才在測驗中寫了這題：「${q.question}」。我不太懂這題的觀念，可以引導我嗎？`)}
@@ -215,7 +181,7 @@
 
                     {!submitted ? (
                         <button 
-                            onClick={submitTest}
+                            onClick={() => setSubmitted(true)}
                             className="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-4 rounded-xl shadow-md transition-colors"
                         >
                             繳交試卷
@@ -224,7 +190,6 @@
                         <div className="bg-indigo-600 text-white p-6 rounded-xl text-center shadow-md">
                             <h3 className="text-xl font-bold mb-2">測驗結果</h3>
                             <p className="text-3xl font-black mb-4">{calculateScore()} / {QUIZ_DATA.length} 題正確</p>
-                            <p className="mb-4 text-indigo-100">學測是一場馬拉松，重點是找出盲點並修正！</p>
                             <button 
                                 onClick={() => navigateToTutor("我剛才完成了多項式函數的模擬測驗，希望能和你一起檢討我不熟的觀念。")}
                                 className="bg-white text-indigo-600 font-bold py-2 px-6 rounded-full hover:bg-indigo-50 transition-colors"
@@ -245,20 +210,12 @@
             const [isLoading, setIsLoading] = useState(false);
             const messagesEndRef = useRef(null);
 
-            // Hook for rendering MathJax in chat
-            const chatContentStr = messages.map(m => m.text).join(' ');
-            useMathJax(chatContentStr);
+            useMathJax(messages.map(m => m.text).join(' '));
 
             useEffect(() => {
-                if (initialMessage && messages.length === 1) {
-                    setInput(initialMessage);
-                }
-                scrollToBottom();
-            }, [messages, initialMessage]);
-
-            const scrollToBottom = () => {
+                if (initialMessage && messages.length === 1) setInput(initialMessage);
                 messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            };
+            }, [messages, initialMessage]);
 
             const handleSend = async () => {
                 if (!input.trim() || isLoading) return;
@@ -270,7 +227,8 @@
                 setIsLoading(true);
 
                 try {
-                    const apiKey = ""; // API key managed by environment
+                    // 請在此處填入你的 Gemini API Key
+                    const apiKey = "YOUR_GEMINI_API_KEY_HERE"; 
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
                     
                     const payload = {
@@ -291,46 +249,35 @@
                     
                     const result = await response.json();
                     const aiText = result.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，小老師腦袋卡住了，請再問一次！';
-                    
                     setMessages([...newMessages, { role: 'model', text: aiText }]);
                 } catch (error) {
                     console.error("AI Error:", error);
-                    setMessages([...newMessages, { role: 'model', text: '伺服器連線異常，請稍後再試。' }]);
+                    setMessages([...newMessages, { role: 'model', text: '請確認是否有填入正確的 Gemini API Key。' }]);
                 } finally {
                     setIsLoading(false);
                 }
             };
 
             const formatMarkdown = (text) => {
-                // Simple markdown parsing for bold and line breaks
                 let html = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                html = html.replace(/\n/g, '<br/>');
-                // MathJax takes care of \( ... \) and $$ ... $$ automatically after rendering HTML
-                return html;
+                return html.replace(/\n/g, '<br/>');
             };
 
             return (
                 <div className="max-w-4xl mx-auto h-[calc(100vh-80px)] flex flex-col p-2 md:p-4">
                     <div className="bg-white flex-1 rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                        
                         <div className="bg-indigo-600 p-4 text-white flex justify-between items-center">
                             <div>
                                 <h2 className="font-bold text-lg">💡 蘇格拉底 AI 數學家教</h2>
                                 <p className="text-indigo-200 text-xs">專精 108 課綱｜引導思考，不直接給答案</p>
                             </div>
-                            <span className="flex h-3 w-3 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                            </span>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 chat-scroll space-y-4">
                             {messages.map((msg, idx) => (
                                 <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     {msg.role === 'model' && (
-                                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2 flex-shrink-0 mt-1">
-                                            👨‍🏫
-                                        </div>
+                                        <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2 flex-shrink-0 mt-1">👨‍🏫</div>
                                     )}
                                     <div className={`max-w-[85%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-slate-800 text-white rounded-tr-none' : 'bg-slate-50 border border-slate-200 text-slate-800 rounded-tl-none'}`}>
                                         <div dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.text) }} className="leading-relaxed whitespace-pre-wrap" />
@@ -368,162 +315,17 @@
                                     disabled={isLoading || !input.trim()}
                                     className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl disabled:opacity-50 transition-colors self-end"
                                 >
-                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                    傳送
                                 </button>
                             </div>
-                            <p className="text-xs text-slate-400 mt-2 text-center">提示：可以上傳題目的文字敘述，或分享你的第一步算式讓家教診斷。</p>
                         </div>
-                    </div>
-                </div>
-            );
-        };
-
-        const DiscussionRoom = () => {
-            const [messages, setMessages] = useState([]);
-            const [input, setInput] = useState('');
-            const [username, setUsername] = useState('');
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
-            const messagesEndRef = useRef(null);
-            
-            // Re-render math when messages change
-            const chatStr = messages.map(m => m.text).join(' ');
-            useMathJax(chatStr);
-
-            useEffect(() => {
-                if (!window.auth) return;
-                
-                const { onAuthStateChanged, signInAnonymously } = window.firebaseModules;
-                
-                const unsubscribe = onAuthStateChanged(window.auth, (user) => {
-                    if (user) {
-                        setIsLoggedIn(true);
-                        setupListener();
-                    } else {
-                        signInAnonymously(window.auth).catch(err => console.error("Auth error", err));
-                    }
-                });
-
-                return () => unsubscribe();
-            }, []);
-
-            const setupListener = () => {
-                if (!window.db || !window.appId) return;
-                
-                const { collection, query, orderBy, onSnapshot } = window.firebaseModules;
-                
-                // Rule 1: Use specific artifacts path for public data
-                const messagesRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'forumMessages');
-                // Rule 2: Simple query
-                const q = query(messagesRef, orderBy('createdAt', 'asc'));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const loadedMessages = [];
-                    snapshot.forEach((doc) => {
-                        loadedMessages.push({ id: doc.id, ...doc.data() });
-                    });
-                    setMessages(loadedMessages);
-                    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-                }, (error) => {
-                    console.error("Firestore Error:", error);
-                });
-
-                return unsubscribe;
-            };
-
-            const handleSend = async (e) => {
-                e.preventDefault();
-                if (!input.trim() || !username.trim() || !isLoggedIn) return;
-
-                const { collection, addDoc, serverTimestamp } = window.firebaseModules;
-                const messagesRef = collection(window.db, 'artifacts', window.appId, 'public', 'data', 'forumMessages');
-                
-                try {
-                    await addDoc(messagesRef, {
-                        text: input.trim(),
-                        user: username.trim(),
-                        userId: window.auth.currentUser.uid,
-                        createdAt: serverTimestamp()
-                    });
-                    setInput('');
-                } catch (err) {
-                    console.error("Error sending msg", err);
-                }
-            };
-
-            if (!window.firebaseApp) {
-                return (
-                    <div className="flex justify-center items-center h-64">
-                        <p className="text-slate-500">系統未連接資料庫，無法使用討論室功能。</p>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="max-w-4xl mx-auto h-[calc(100vh-80px)] flex flex-col p-2 md:p-4">
-                    <div className="bg-white flex-1 rounded-xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-                        
-                        <div className="bg-slate-800 p-4 text-white">
-                            <h2 className="font-bold text-lg flex items-center">
-                                💬 考生戰情討論室
-                                <span className="ml-2 px-2 py-0.5 bg-green-500 text-xs rounded-full">{messages.length} 則討論</span>
-                            </h2>
-                            <p className="text-slate-300 text-xs mt-1">互相解題、分享多項式函數的速解技巧或圖形記憶法！</p>
-                        </div>
-
-                        {!isLoggedIn ? (
-                            <div className="flex-1 flex items-center justify-center bg-slate-50">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-800"></div>
-                            </div>
-                        ) : (
-                            <>
-                                <div className="flex-1 overflow-y-auto p-4 chat-scroll space-y-4 bg-slate-50">
-                                    {messages.map((msg) => {
-                                        const isMe = msg.userId === window.auth.currentUser?.uid;
-                                        return (
-                                            <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                                                <span className="text-xs text-slate-500 mb-1 px-1">{msg.user}</span>
-                                                <div className={`max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-indigo-500 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-800 rounded-tl-none'}`}>
-                                                    <span dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br/>') }} className="break-words"/>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                    <div ref={messagesEndRef} />
-                                </div>
-
-                                <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-200 flex flex-col sm:flex-row gap-2">
-                                    <input 
-                                        type="text" 
-                                        placeholder="你的暱稱 (例: 建中金城武)" 
-                                        value={username}
-                                        onChange={(e) => setUsername(e.target.value)}
-                                        className="w-full sm:w-1/4 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-slate-800 outline-none text-sm"
-                                        maxLength="15"
-                                        required
-                                    />
-                                    <div className="flex flex-1 gap-2">
-                                        <input 
-                                            type="text" 
-                                            placeholder="輸入討論內容..." 
-                                            value={input}
-                                            onChange={(e) => setInput(e.target.value)}
-                                            className="flex-1 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-slate-800 outline-none"
-                                            required
-                                        />
-                                        <button type="submit" className="bg-slate-800 text-white px-4 py-2 rounded-lg hover:bg-slate-900 font-medium whitespace-nowrap">
-                                            發送
-                                        </button>
-                                    </div>
-                                </form>
-                            </>
-                        )}
                     </div>
                 </div>
             );
         };
 
         const App = () => {
-            const [currentView, setCurrentView] = useState('test'); // 'test', 'tutor', 'discussion'
+            const [currentView, setCurrentView] = useState('test');
             const [tutorInitialMsg, setTutorInitialMsg] = useState('');
 
             const navigateToTutor = (msg) => {
@@ -533,35 +335,25 @@
 
             return (
                 <div className="min-h-screen flex flex-col">
-                    {/* Navbar */}
                     <nav className="bg-white shadow-sm sticky top-0 z-10">
                         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                                <span className="text-2xl">🎯</span>
-                                <h1 className="font-bold text-slate-800 text-lg hidden sm:block">116學測數學特訓網</h1>
-                            </div>
-                            <div className="flex space-x-1 sm:space-x-4 bg-slate-100 p-1 rounded-lg">
+                            <h1 className="font-bold text-slate-800 text-lg">🎯 116學測數學特訓網</h1>
+                            <div className="flex space-x-2 bg-slate-100 p-1 rounded-lg">
                                 <button 
                                     onClick={() => setCurrentView('test')}
-                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${currentView === 'test' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${currentView === 'test' ? 'bg-white shadow text-slate-800' : 'text-slate-500'}`}
                                 >📝 模擬測驗</button>
                                 <button 
                                     onClick={() => setCurrentView('tutor')}
-                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${currentView === 'tutor' ? 'bg-white shadow text-indigo-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${currentView === 'tutor' ? 'bg-white shadow text-indigo-600' : 'text-slate-500'}`}
                                 >👨‍🏫 AI家教</button>
-                                <button 
-                                    onClick={() => setCurrentView('discussion')}
-                                    className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${currentView === 'discussion' ? 'bg-white shadow text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
-                                >💬 討論室</button>
                             </div>
                         </div>
                     </nav>
 
-                    {/* Main Content Area */}
                     <main className="flex-1 mt-4">
                         {currentView === 'test' && <MockTest navigateToTutor={navigateToTutor} />}
                         {currentView === 'tutor' && <TutorChat initialMessage={tutorInitialMsg} />}
-                        {currentView === 'discussion' && <DiscussionRoom />}
                     </main>
                 </div>
             );
